@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Complete Italian 1 (7th-8th Grade) Virtual Vocabulary</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Data and script files -->
+    <script src="data.js"></script>
+    <script src="script.js"></script>
+</head>
+<body>
+    <div class="sidebar-toggle">
+        <button id="sidebar-toggle-btn">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>Italian Vocabulary</h1>
+            <button id="sidebar-toggle-btn" class="sidebar-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        <nav>
+            <ul class="main-nav">
+                <li><a href="#" class="active" data-category="all">All Vocabulary</a></li>
+                <li><a href="#" data-category="greetings">Greetings</a></li>
+                <li><a href="#" data-category="goodbyes">Goodbyes</a></li>
+                <li><a href="#" data-category="numbers">Numbers</a></li>
+                <li><a href="#" data-category="dates">Dates</a></li>
+                <li><a href="#" data-category="weather">Weather</a></li>
+                <li><a href="#" data-category="conversation">Conversation</a></li>
+                <li><a href="#" data-category="verbs">Verbs</a></li>
+                <li><a href="#" data-category="family">Family</a></li>
+                <li><a href="#" data-category="clothing">Clothing</a></li>
+                <li><a href="#" data-category="community">Community</a></li>
+                <li><a href="#" data-category="food">Food & Drink</a></li>
+                <li><a href="#" data-category="leisure">Leisure</a></li>
+                <li><a href="#" data-category="travel">Travel</a></li>
+                <li><a href="#" data-category="house">House</a></li>
+                <li><a href="#" data-category="health">Health</a></li>
+                <li><a href="#" data-category="technology">Technology</a></li>
+                <li><a href="#" data-category="environment">Environment</a></li>
+            </ul>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <header>
+            <div class="container">
+                <h1>The Complete Italian 1 (7th-8th Grade) Virtual Vocabulary</h1>
+                <div class="search-container">
+                    <input type="text" id="search-input" placeholder="Search vocabulary...">
+                    <button id="search-button"><i class="fas fa-search"></i></button>
+                </div>
+            </div>
+        </header>
+
+        <main class="container">
+            <div id="vocabulary-container">
+                <!-- Vocabulary content will be loaded here -->
+            </div>
+        </main>
+
+        <footer>
+            <div class="container">
+                <p>Italian Vocabulary Learning Resource</p>
+            </div>
+        </footer>
+    </div>
+
+    <div id="word-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modal-word"></h2>
+            <p id="modal-translation"></p>
+            <div id="modal-details">
+                <p id="modal-gender"></p>
+                <p id="modal-type"></p>
+            </div>
+            <div id="modal-conjugation" class="hidden">
+                <h3>Conjugation</h3>
+                <table>
+                    <tr>
+                        <th>Pronoun</th>
+                        <th>Present</th>
+                        <th>Past</th>
+                        <th>Future</th>
+                    </tr>
+                    <tr>
+                        <td>Io</td>
+                        <td id="conj-io-present"></td>
+                        <td id="conj-io-past"></td>
+                        <td id="conj-io-future"></td>
+                    </tr>
+                    <tr>
+                        <td>Tu</td>
+                        <td id="conj-tu-present"></td>
+                        <td id="conj-tu-past"></td>
+                        <td id="conj-tu-future"></td>
+                    </tr>
+                    <tr>
+                        <td>Lui/Lei</td>
+                        <td id="conj-lui-present"></td>
+                        <td id="conj-lui-past"></td>
+                        <td id="conj-lui-future"></td>
+                    </tr>
+                    <tr>
+                        <td>Noi</td>
+                        <td id="conj-noi-present"></td>
+                        <td id="conj-noi-past"></td>
+                        <td id="conj-noi-future"></td>
+                    </tr>
+                    <tr>
+                        <td>Voi</td>
+                        <td id="conj-voi-present"></td>
+                        <td id="conj-voi-past"></td>
+                        <td id="conj-voi-future"></td>
+                    </tr>
+                    <tr>
+                        <td>Loro</td>
+                        <td id="conj-loro-present"></td>
+                        <td id="conj-loro-past"></td>
+                        <td id="conj-loro-future"></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
