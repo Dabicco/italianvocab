@@ -18,6 +18,18 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize sidebar toggle functionality
     initializeSidebar();
+    
+    // Only initialize translation tab if experimental translation is enabled
+    const experimentalTranslation = localStorage.getItem('experimentalTranslation');
+    if (experimentalTranslation === 'true') {
+        initTranslationTab();
+    } else {
+        // Ensure translation tab is hidden if it exists but should be disabled
+        const existingTab = document.querySelector('.translation-tab');
+        if (existingTab) {
+            existingTab.style.display = 'none';
+        }
+    }
 });
 
 // Global variables
@@ -98,6 +110,90 @@ function displayCategory(category) {
     // Create a title for the category
     const categoryTitle = document.createElement('h2');
     categoryTitle.classList.add('category-title');
+    
+    if (category === 'study') {
+        // Clear the main content area
+        vocabularyContainer.innerHTML = '';
+        
+        // Create a container for the study section
+        const studyContainer = document.createElement('div');
+        studyContainer.className = 'study-container';
+        
+        // Create the situations generator section
+        const situationsSection = document.createElement('div');
+        situationsSection.className = 'situations-section';
+        
+        // Add a title for the situations generator
+        const situationsTitle = document.createElement('h2');
+        situationsTitle.textContent = 'Situations Generator';
+        situationsSection.appendChild(situationsTitle);
+        
+        // Add a description for the situations generator
+        const situationsDescription = document.createElement('p');
+        situationsDescription.className = 'situations-description';
+        situationsDescription.innerHTML = 'Use this tool to generate random conversation scenarios for practice. These situations simulate real-life interactions in Italian. <strong>Two people are recommended for adequate studying</strong> - one person can play each role in the conversation.';
+        situationsSection.appendChild(situationsDescription);
+        
+        // Create a container for the situation display
+        const situationDisplay = document.createElement('div');
+        situationDisplay.className = 'situation-display';
+        situationDisplay.innerHTML = '<p>Click the button below to generate a random situation for practice.</p>';
+        situationsSection.appendChild(situationDisplay);
+        
+        // Create the randomize button
+        const randomizeButton = document.createElement('button');
+        randomizeButton.className = 'randomize-button';
+        randomizeButton.textContent = 'Generate Random Situation';
+        randomizeButton.addEventListener('click', function() {
+            generateRandomSituation(situationDisplay);
+        });
+        situationsSection.appendChild(randomizeButton);
+        
+        // Add the situations section to the study container
+        studyContainer.appendChild(situationsSection);
+        
+        // Create a title for the conversations section
+        const conversationsTitle = document.createElement('h2');
+        conversationsTitle.textContent = 'Conversations';
+        studyContainer.appendChild(conversationsTitle);
+        
+        // Create an iframe for the conversations section
+        const iframe = document.createElement('iframe');
+        iframe.src = 'conversations/index.html';
+        iframe.style.width = '100%';
+        iframe.style.height = '800px';
+        iframe.style.border = 'none';
+        iframe.allowFullscreen = true;
+        
+        // Add the iframe to the study container
+        studyContainer.appendChild(iframe);
+        
+        // Append the study container to the main content area
+        vocabularyContainer.appendChild(studyContainer);
+        
+        // Update active nav link
+        updateActiveNavLink(category);
+        return;
+    } else if (category === 'conversations') {
+        // Special handling for Conversations section
+        categoryTitle.textContent = 'Conversations';
+        vocabularyContainer.appendChild(categoryTitle);
+        
+        // Create iframe to embed conversations/index.html
+        const iframe = document.createElement('iframe');
+        iframe.src = './conversations/index.html';
+        iframe.style.width = '100%';
+        iframe.style.height = '800px';
+        iframe.style.border = 'none';
+        iframe.style.overflow = 'hidden';
+        iframe.allowFullscreen = true;
+        
+        vocabularyContainer.appendChild(iframe);
+        
+        // Update active nav link
+        updateActiveNavLink(category);
+        return;
+    }
     
     if (category === 'all') {
         categoryTitle.textContent = 'All Vocabulary';
@@ -1070,6 +1166,27 @@ function initializeSettings() {
         }
     );
     
+    // Experimental Translation Tool toggle
+    const experimentalTranslationOption = createSettingsToggle(
+        'Experimental Translation Tool [BETA]',
+        'experimental-translation-toggle',
+        localStorage.getItem('experimentalTranslation') === 'true',
+        function(isChecked) {
+            localStorage.setItem('experimentalTranslation', isChecked);
+            // Show or hide the translation tab based on the toggle
+            const translationTab = document.querySelector('.translation-tab');
+            if (translationTab) {
+                if (isChecked) {
+                    translationTab.style.display = 'block';
+                } else {
+                    translationTab.style.display = 'none';
+                }
+            }
+            // Reload the page if the setting is changed
+            window.location.reload();
+        }
+    );
+    
     // Export data button
     const exportDataOption = document.createElement('div');
     exportDataOption.classList.add('settings-option');
@@ -1106,6 +1223,7 @@ function initializeSettings() {
     
     // Add options to advanced tab
     advancedContent.appendChild(autoSaveOption);
+    advancedContent.appendChild(experimentalTranslationOption);
     advancedContent.appendChild(exportDataOption);
     advancedContent.appendChild(clearDataOption);
     
@@ -1257,7 +1375,8 @@ function exportUserData() {
         focusOutlines: localStorage.getItem('focusOutlines'),
         autoSaveProgress: localStorage.getItem('autoSaveProgress'),
         sidebarCollapsed: localStorage.getItem('sidebarCollapsed'),
-        studyProgress: localStorage.getItem('studyProgress')
+        studyProgress: localStorage.getItem('studyProgress'),
+        translationMode: localStorage.getItem('translationMode')
     };
     
     const dataStr = JSON.stringify(userData, null, 2);
@@ -1350,6 +1469,18 @@ function applySettings() {
     if (confirmBeforeClosing === 'true') {
         window.addEventListener('beforeunload', confirmClosing);
     }
+    
+    // Initialize translation tab if enabled
+    const experimentalTranslation = localStorage.getItem('experimentalTranslation');
+    if (experimentalTranslation === 'true') {
+        initializeTranslationTab();
+    }
+}
+
+// Helper function to capitalize the first letter of a string
+function capitalizeFirstLetter(string) {
+    if (!string) return '';
+    return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
 // Reset settings to defaults
@@ -1424,12 +1555,832 @@ function resetSettings() {
         document.getElementById('auto-save-toggle').checked = true;
         localStorage.setItem('autoSaveProgress', true);
         
+        // Reset experimental translation tool
+        document.getElementById('experimental-translation-toggle').checked = false;
+        localStorage.setItem('experimentalTranslation', false);
+        localStorage.setItem('translationMode', 'vocabulary');
+        const translationTab = document.getElementById('translation-tab');
+        if (translationTab) {
+            translationTab.style.display = 'none';
+        }
+        
         alert('All settings have been reset to their defaults.');
     }
 }
 
-// Helper function to capitalize the first letter of a string
-function capitalizeFirstLetter(string) {
-    if (!string) return '';
-    return string.charAt(0).toUpperCase() + string.slice(1);
+// Initialize translation tab
+function initializeTranslationTab() {
+    // Check if the translation tab already exists
+    if (document.getElementById('translation-tab')) {
+        return;
+    }
+    
+    // Create the translation tab
+    const translationTab = document.createElement('div');
+    translationTab.id = 'translation-tab';
+    translationTab.className = 'translation-tab';
+    
+    // Create the header
+    const tabHeader = document.createElement('div');
+    tabHeader.className = 'translation-tab-header';
+    
+    const tabTitle = document.createElement('h2');
+    tabTitle.textContent = '[BETA] Translation Delta';
+    
+    const closeButton = document.createElement('button');
+    closeButton.className = 'close-translation-tab';
+    closeButton.innerHTML = '&times;';
+    closeButton.addEventListener('click', function() {
+        translationTab.classList.toggle('collapsed');
+    });
+    
+    tabHeader.appendChild(tabTitle);
+    tabHeader.appendChild(closeButton);
+    
+    // Create the content
+    const tabContent = document.createElement('div');
+    tabContent.className = 'translation-tab-content';
+    
+    const description = document.createElement('p');
+    description.className = 'translation-description';
+    description.textContent = 'Type text in English to translate to Italian using the vocabulary database with proper conjugation.';
+    
+    // Create translation mode selector
+    const modeSelector = document.createElement('div');
+    modeSelector.className = 'translation-mode-selector';
+    
+    const modeLabel = document.createElement('label');
+    modeLabel.textContent = 'Translation Mode:';
+    modeLabel.className = 'mode-label';
+    
+    const modeToggleContainer = document.createElement('div');
+    modeToggleContainer.className = 'mode-toggle-container';
+    
+    const vocabularyMode = document.createElement('button');
+    vocabularyMode.className = 'mode-button active';
+    vocabularyMode.textContent = 'Vocabulary';
+    vocabularyMode.dataset.mode = 'vocabulary';
+    
+    const aiMode = document.createElement('button');
+    aiMode.className = 'mode-button';
+    aiMode.textContent = 'AI Assist';
+    aiMode.dataset.mode = 'ai';
+    
+    modeToggleContainer.appendChild(vocabularyMode);
+    modeToggleContainer.appendChild(aiMode);
+    modeSelector.appendChild(modeLabel);
+    modeSelector.appendChild(modeToggleContainer);
+    
+    // Add event listeners to mode buttons
+    vocabularyMode.addEventListener('click', function() {
+        vocabularyMode.classList.add('active');
+        aiMode.classList.remove('active');
+        localStorage.setItem('translationMode', 'vocabulary');
+    });
+    
+    aiMode.addEventListener('click', function() {
+        aiMode.classList.add('active');
+        vocabularyMode.classList.remove('active');
+        localStorage.setItem('translationMode', 'ai');
+    });
+    
+    // Set initial mode from localStorage
+    const savedMode = localStorage.getItem('translationMode') || 'vocabulary';
+    if (savedMode === 'ai') {
+        aiMode.click();
+    }
+    
+    const inputContainer = document.createElement('div');
+    inputContainer.className = 'translation-input-container';
+    
+    const textInput = document.createElement('textarea');
+    textInput.className = 'translation-input';
+    textInput.placeholder = 'Enter English text to translate...';
+    
+    const translateBtn = document.createElement('button');
+    translateBtn.className = 'translate-button';
+    translateBtn.textContent = 'Translate';
+    
+    inputContainer.appendChild(textInput);
+    inputContainer.appendChild(translateBtn);
+    
+    const resultContainer = document.createElement('div');
+    resultContainer.className = 'translation-result-container';
+    
+    const resultTitle = document.createElement('h3');
+    resultTitle.textContent = 'Translation Result';
+    
+    const resultText = document.createElement('div');
+    resultText.className = 'translation-result';
+    resultText.textContent = 'Translation will appear here...';
+    
+    resultContainer.appendChild(resultTitle);
+    resultContainer.appendChild(resultText);
+    
+    tabContent.appendChild(description);
+    tabContent.appendChild(modeSelector);
+    tabContent.appendChild(inputContainer);
+    tabContent.appendChild(resultContainer);
+    
+    // Assemble the tab
+    translationTab.appendChild(tabHeader);
+    translationTab.appendChild(tabContent);
+    
+    // Add to the body
+    document.body.appendChild(translationTab);
+    
+    // Add event listener for translate button
+    translateBtn.addEventListener('click', function() {
+        const mode = localStorage.getItem('translationMode') || 'vocabulary';
+        if (mode === 'vocabulary') {
+            translateText(textInput.value, resultText);
+        } else {
+            translateWithAI(textInput.value, resultText);
+        }
+    });
+    
+    // Also translate on Enter key (when Ctrl is pressed)
+    textInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && e.ctrlKey) {
+            e.preventDefault();
+            const mode = localStorage.getItem('translationMode') || 'vocabulary';
+            if (mode === 'vocabulary') {
+                translateText(textInput.value, resultText);
+            } else {
+                translateWithAI(textInput.value, resultText);
+            }
+        }
+    });
 }
+
+// Function to translate text using AI
+function translateWithAI(text, resultElement) {
+    if (!text || text.trim() === '') {
+        resultElement.innerHTML = '<p class="translation-error">Please enter some text to translate.</p>';
+        return;
+    }
+    
+    // Content filtering - check for inappropriate content
+    const inappropriateWords = [
+        'penis', 'vagina', 'sex', 'fuck', 'shit', 'ass', 'dick', 'cock', 'pussy', 
+        'bitch', 'bastard', 'cunt', 'whore', 'slut', 'porn', 'pornography', 'masturbate',
+        'masturbation', 'orgasm', 'cum', 'ejaculate', 'anal', 'anus', 'blowjob', 'handjob',
+        'rimjob', 'fellatio', 'cunnilingus', 'dildo', 'vibrator', 'buttplug', 'butt plug',
+        'nipple', 'tits', 'boobs', 'breasts', 'testicles', 'balls', 'scrotum', 'semen',
+        'sperm', 'erection', 'erect', 'horny', 'aroused', 'arousal', 'climax', 'orgy',
+        'gangbang', 'threesome', 'foursome', 'bukkake', 'hentai', 'bondage', 'bdsm',
+        'sadism', 'masochism', 'fetish', 'kink', 'kinky', 'slutty', 'whore', 'hooker',
+        'prostitute', 'escort', 'pimp', 'brothel', 'incest', 'rape', 'molest', 'pedophile',
+        'pedo', 'child porn', 'child pornography', 'jailbait', 'underage', 'minor',
+        'bestiality', 'zoophilia', 'necrophilia', 'necrophile', 'necro', 'scat', 'feces',
+        'poop', 'piss', 'urine', 'urinate', 'defecate', 'fart', 'queef', 'smegma',
+        'precum', 'pre-cum', 'pre cum', 'squirt', 'gush', 'creampie', 'cream pie',
+        'facial', 'money shot', 'cumshot', 'cum shot', 'swallow', 'deepthroat', 'deep throat',
+        'gag', 'choke', 'spank', 'whip', 'flog', 'paddle', 'cane', 'torture', 'humiliate',
+        'humiliation', 'degrade', 'degradation', 'slap', 'hit', 'beat', 'abuse', 'rape',
+        'force', 'forced', 'non-consensual', 'non consensual', 'nonconsensual', 'consent',
+        'age play', 'ageplay', 'daddy', 'mommy', 'baby', 'infant', 'child', 'teen', 'teenager',
+        'schoolgirl', 'schoolboy', 'teacher', 'student', 'principal', 'nurse', 'doctor',
+        'patient', 'therapist', 'therapy', 'massage', 'masseuse', 'masseur', 'happy ending',
+        'rub and tug', 'rub n tug', 'rub & tug', 'escort', 'call girl', 'callgirl', 'hooker',
+        'prostitute', 'whore', 'slut', 'tramp', 'hoe', 'ho', 'thot', 'skank', 'slag', 'trollop',
+        'hussy', 'jezebel', 'strumpet', 'wench', 'tart', 'floozy', 'harlot', 'courtesan',
+        'concubine', 'mistress', 'kept woman', 'sugar baby', 'sugar daddy', 'sugar momma',
+        'sugar mama', 'sugar mommy', 'sugar mummy', 'sugar', 'daddy', 'momma', 'mama',
+        'mommy', 'mummy', 'baby', 'babe', 'honey', 'sweetie', 'sweetheart', 'darling',
+        'dear', 'love', 'lover', 'boyfriend', 'girlfriend', 'partner', 'spouse', 'husband',
+        'wife', 'significant other', 'SO', 'friend with benefits', 'FWB', 'fuck buddy',
+        'booty call', 'one night stand', 'ONS', 'hookup', 'hook up', 'hook-up', 'casual',
+        'fling', 'affair', 'cheat', 'cheating', 'adultery', 'adulterer', 'adulteress',
+        'cuckold', 'cuck', 'bull', 'hotwife', 'hot wife', 'swinger', 'swing', 'swinging',
+        'open relationship', 'polyamory', 'polyamorous', 'poly', 'monogamy', 'monogamous',
+        'mono', 'commitment', 'committed', 'exclusive', 'exclusivity', 'faithful', 'loyalty',
+        'loyal', 'trust', 'trustworthy', 'honest', 'honesty', 'dishonest', 'dishonesty',
+        'lie', 'liar', 'lying', 'cheat', 'cheater', 'cheating'
+    ];
+    
+    const lowerText = text.toLowerCase();
+    
+    for (const word of inappropriateWords) {
+        if (lowerText.includes(word)) {
+            resultElement.innerHTML = '<p class="translation-error">I cannot translate inappropriate content. Please try a different phrase.</p>';
+            return;
+        }
+    }
+    
+    // Try to use vocabulary-based translation first
+    const vocabularyResult = getVocabularyTranslation(text);
+    if (vocabularyResult.allWordsFound) {
+        // If all words were found in the vocabulary, use that translation
+        displayTranslationResult(text, vocabularyResult.translation, 'Vocabulary', resultElement);
+        return;
+    }
+    
+    // Try to use a more reliable API - MyMemory Translation API (free tier)
+    const apiUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|it`;
+    
+    fetch(apiUrl)
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Translation API request failed');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.responseStatus === 200 && data.responseData && data.responseData.translatedText) {
+            // Clean up the translation (remove any odd formatting)
+            let translatedText = data.responseData.translatedText;
+            
+            // Fix common formatting issues
+            translatedText = translatedText
+                .replace(/\s*:\s*/g, ' ') // Remove colons with spaces
+                .replace(/\s*,\s*/g, ' ') // Remove commas with spaces
+                .replace(/\s+/g, ' ')     // Normalize spaces
+                .trim();                   // Trim extra spaces
+            
+            // Display the result
+            displayTranslationResult(text, translatedText, 'AI', resultElement);
+        } else {
+            throw new Error('Invalid translation response');
+        }
+    })
+    .catch(error => {
+        console.error('Translation error:', error);
+        // Fall back to vocabulary-based translation
+        translateText(text, resultElement);
+    });
+}
+
+// Function to get a translation using only the vocabulary
+function getVocabularyTranslation(text) {
+    // Clean the input text
+    const cleanText = text.trim().toLowerCase();
+    
+    // Split into words
+    const words = cleanText.split(/\s+/);
+    
+    // Handle empty input
+    if (words.length === 0) {
+        return '';
+    }
+    
+    let translatedWords = [];
+    
+    // Find potential verb and subject
+    let verbIndex = -1;
+    let verbSubject = null;
+    
+    // Common verbs to check for
+    const commonVerbs = ['eat', 'drink', 'go', 'have', 'do', 'make', 'say', 'get', 'take', 'see', 'know', 'come', 'think', 'look', 'want', 'give', 'use', 'find', 'tell', 'ask', 'work', 'seem', 'feel', 'try', 'leave', 'call'];
+    
+    // First pass: identify verb and subject
+    for (let i = 0; i < words.length; i++) {
+        if (commonVerbs.includes(words[i])) {
+            verbIndex = i;
+            // Look for subject before the verb
+            if (i > 0 && ['i', 'you', 'he', 'she', 'it', 'we', 'they'].includes(words[i-1])) {
+                verbSubject = words[i-1];
+            } else if (i === 1 && words[0] === 'i') {
+                verbSubject = 'i';
+            }
+            break;
+        }
+    }
+    
+    // Second pass: translate each word
+    for (let i = 0; i < words.length; i++) {
+        const word = words[i];
+        
+        // Skip punctuation
+        if (/^[.,;:!?]$/.test(word)) {
+            translatedWords.push(word);
+            continue;
+        }
+        
+        // Determine if this word is a verb
+        const isVerb = (i === verbIndex);
+        
+        // Find translation
+        const translatedWord = findWordInVocabulary(word, isVerb, verbSubject);
+        translatedWords.push(translatedWord);
+    }
+    
+    // Join the translated words
+    return translatedWords.join(' ');
+}
+
+// Common phrases dictionary
+const commonPhrases = {
+    "hello": "Ciao",
+    "hi": "Ciao",
+    "goodbye": "Arrivederci",
+    "bye": "Ciao",
+    "thank you": "Grazie",
+    "thanks": "Grazie",
+    "please": "Per favore",
+    "excuse me": "Scusi",
+    "sorry": "Mi dispiace",
+    "what's your name": "Come ti chiami",
+    "whats your name": "Come ti chiami",
+    "my name is": "Mi chiamo",
+    "how are you": "Come stai",
+    "i'm fine": "Sto bene",
+    "im fine": "Sto bene",
+    "i am fine": "Sto bene",
+    "i'm very well": "Sto molto bene",
+    "im very well": "Sto molto bene",
+    "i am very well": "Sto molto bene",
+    "good morning": "Buon giorno",
+    "good evening": "Buona sera",
+    "good night": "Buona notte",
+    "yes": "Sì",
+    "no": "No",
+    "i don't understand": "Non capisco",
+    "i understand": "Capisco",
+    "i don't know": "Non lo so",
+    "i know": "Lo so",
+    "i love you": "Ti amo",
+    "where is": "Dov'è",
+    "how much": "Quanto costa",
+    "what time is it": "Che ora è",
+    "today": "Oggi",
+    "tomorrow": "Domani",
+    "yesterday": "Ieri",
+    "see you later": "A più tardi",
+    "see you tomorrow": "A domani",
+    "see you soon": "A presto",
+    "welcome": "Benvenuto",
+    "you're welcome": "Prego",
+    "test": "Test",
+    "that": "Quello",
+    "i like": "Mi piace",
+    "i am sad": "Sono triste",
+    "i eat": "Mangio",
+    "i eat the pizza": "Mangio la pizza",
+    "the pizza": "La pizza",
+    "what is the weather like": "Che tempo fa",
+    "what's the weather like": "Che tempo fa"
+};
+
+// Function to find a word in the vocabulary
+function findWordInVocabulary(word, isVerb, verbSubject) {
+    // Skip common words that don't need translation
+    const commonWords = ['a', 'an', 'the', 'in', 'on', 'at', 'to', 'for', 'with', 'by', 'of', 'and', 'or', 'but'];
+    if (commonWords.includes(word)) {
+        return '<em>' + word + '</em>';
+    }
+    
+    // Special case for "eat" and "i eat"
+    if (word === 'eat') {
+        if (verbSubject === 'i') {
+            return 'mangio';
+        } else if (verbSubject === 'you') {
+            return 'mangi';
+        } else if (verbSubject === 'he' || verbSubject === 'she' || verbSubject === 'it') {
+            return 'mangia';
+        } else if (verbSubject === 'we') {
+            return 'mangiamo';
+        } else if (verbSubject === 'they') {
+            return 'mangiano';
+        }
+        return 'mangiare';
+    }
+    
+    // Special case for "pizza"
+    if (word === 'pizza') {
+        return 'pizza';
+    }
+    
+    // Special case for "sad"
+    if (word === 'sad') {
+        return 'triste';
+    }
+    
+    // Direct word-to-word mapping for common words
+    const directMappings = {
+        'i': 'io',
+        'you': 'tu',
+        'he': 'lui',
+        'she': 'lei',
+        'it': 'esso',
+        'we': 'noi',
+        'they': 'loro',
+        'this': 'questo',
+        'that': 'quello',
+        'these': 'questi',
+        'those': 'quelli',
+        'such': 'tale',
+        'same': 'stesso',
+        'different': 'diverso',
+        'other': 'altro',
+        'another': 'un altro',
+        'eat': 'mangiare',
+        'drink': 'bere',
+        'sleep': 'dormire',
+        'walk': 'camminare',
+        'run': 'correre',
+        'jump': 'saltare',
+        'sit': 'sedersi',
+        'stand': 'stare in piedi',
+        'lie': 'sdraiarsi',
+        'fall': 'cadere',
+        'go': 'andare',
+        'come': 'venire',
+        'leave': 'partire',
+        'arrive': 'arrivare',
+        'stay': 'restare',
+        'live': 'vivere',
+        'die': 'morire',
+        'kill': 'uccidere',
+        'hurt': 'ferire',
+        'help': 'aiutare',
+        'ask': 'chiedere',
+        'answer': 'rispondere',
+        'tell': 'dire',
+        'speak': 'parlare',
+        'listen': 'ascoltare',
+        'hear': 'sentire',
+        'see': 'vedere',
+        'look': 'guardare',
+        'watch': 'guardare',
+        'feel': 'sentire',
+        'touch': 'toccare',
+        'smell': 'odorare',
+        'taste': 'assaggiare',
+        'think': 'pensare',
+        'know': 'sapere',
+        'understand': 'capire',
+        'remember': 'ricordare',
+        'forget': 'dimenticare',
+        'learn': 'imparare',
+        'teach': 'insegnare',
+        'study': 'studiare',
+        'read': 'leggere',
+        'write': 'scrivere',
+        'draw': 'disegnare',
+        'paint': 'dipingere',
+        'sing': 'cantare',
+        'dance': 'ballare',
+        'play': 'giocare',
+        'win': 'vincere',
+        'lose': 'perdere',
+        'start': 'iniziare',
+        'stop': 'fermare',
+        'wait': 'aspettare',
+        'continue': 'continuare',
+        'change': 'cambiare',
+        'turn': 'girare',
+        'open': 'aprire',
+        'close': 'chiudere',
+        'break': 'rompere',
+        'fix': 'riparare',
+        'clean': 'pulire',
+        'wash': 'lavare',
+        'cook': 'cucinare',
+        'eat': 'mangiare',
+        'drink': 'bere',
+        'give': 'dare',
+        'take': 'prendere',
+        'bring': 'portare',
+        'carry': 'portare',
+        'send': 'mandare',
+        'receive': 'ricevere',
+        'buy': 'comprare',
+        'sell': 'vendere',
+        'pay': 'pagare',
+        'spend': 'spendere',
+        'cost': 'costare',
+        'earn': 'guadagnare',
+        'save': 'risparmiare',
+        'borrow': 'prendere in prestito',
+        'lend': 'prestare',
+        'owe': 'dovere',
+        'own': 'possedere',
+        'have': 'avere',
+        'be': 'essere',
+        'do': 'fare',
+        'make': 'fare',
+        'use': 'usare',
+        'try': 'provare',
+        'need': 'avere bisogno',
+        'want': 'volere',
+        'like': 'piacere',
+        'love': 'amare',
+        'hate': 'odiare',
+        'fear': 'temere',
+        'hope': 'sperare',
+        'wish': 'desiderare',
+        'prefer': 'preferire',
+        'choose': 'scegliere',
+        'decide': 'decidere',
+        'agree': 'essere d\'accordo',
+        'disagree': 'non essere d\'accordo',
+        'believe': 'credere',
+        'trust': 'fidarsi',
+        'doubt': 'dubitare',
+        'seem': 'sembrare',
+        'appear': 'apparire',
+        'happen': 'succedere',
+        'become': 'diventare',
+        'grow': 'crescere',
+        'develop': 'sviluppare',
+        'improve': 'migliorare',
+        'increase': 'aumentare',
+        'decrease': 'diminuire',
+        'rise': 'salire',
+        'fall': 'cadere',
+        'begin': 'iniziare',
+        'end': 'finire',
+        'finish': 'finire',
+        'complete': 'completare',
+        'continue': 'continuare',
+        'repeat': 'ripetere',
+        'practice': 'praticare',
+        'prepare': 'preparare',
+        'plan': 'pianificare',
+        'organize': 'organizzare',
+        'manage': 'gestire',
+        'control': 'controllare',
+        'lead': 'guidare',
+        'follow': 'seguire',
+        'join': 'unirsi',
+        'meet': 'incontrare',
+        'visit': 'visitare',
+        'travel': 'viaggiare',
+        'explore': 'esplorare',
+        'discover': 'scoprire',
+        'find': 'trovare',
+        'lose': 'perdere',
+        'miss': 'mancare',
+        'search': 'cercare',
+        'look for': 'cercare',
+        'seek': 'cercare',
+        'hide': 'nascondere',
+        'show': 'mostrare',
+        'explain': 'spiegare',
+        'describe': 'descrivere',
+        'define': 'definire',
+        'mean': 'significare',
+        'translate': 'tradurre',
+        'pronounce': 'pronunciare',
+        'spell': 'scrivere',
+        'count': 'contare',
+        'calculate': 'calcolare',
+        'measure': 'misurare',
+        'weigh': 'pesare',
+        'pizza': 'pizza'
+    };
+    
+    if (directMappings[word]) {
+        return directMappings[word];
+    }
+    
+    // Search in all categories
+    for (const category in vocabularyData) {
+        for (const item of vocabularyData[category]) {
+            // Check if the English translation matches exactly
+            const englishWords = item.english.toLowerCase().split(/[,\/\s]+/).map(w => w.trim());
+            if (englishWords.includes(word) || item.english.toLowerCase() === word) {
+                // If it's a verb and we have conjugation info, use the appropriate form
+                if (isVerb && item.type && (item.type === 'verb' || item.type === 'helping verb' || item.type === 'irregular verb') && item.conjugation && item.conjugation.present) {
+                    // Map English subjects to Italian subjects
+                    const subjectMap = {
+                        'i': 'io',
+                        'you': 'tu',
+                        'he': 'lui',
+                        'she': 'lui', // In Italian, he/she use the same conjugation
+                        'it': 'lui',
+                        'we': 'noi',
+                        'they': 'loro'
+                    };
+                    
+                    const italianSubject = subjectMap[verbSubject] || 'io';
+                    return item.conjugation.present[italianSubject] || item.italian;
+                }
+                
+                return item.italian;
+            }
+        }
+    }
+    
+    // If word not found, return the original word with [EX] marker
+    return '[EX]' + word;
+}
+
+// Function to translate text using vocabulary
+function translateText(text, resultElement) {
+    if (!text || text.trim() === '') {
+        resultElement.innerHTML = '<p class="translation-error">Please enter some text to translate.</p>';
+        return;
+    }
+    
+    // Content filtering - check for inappropriate content
+    const inappropriateWords = [
+        'penis', 'vagina', 'sex', 'fuck', 'shit', 'ass', 'dick', 'cock', 'pussy', 
+        'bitch', 'bastard', 'cunt', 'whore', 'slut', 'porn', 'pornography', 'masturbate',
+        'masturbation', 'orgasm', 'cum', 'ejaculate', 'anal', 'anus', 'blowjob', 'handjob',
+        'rimjob', 'fellatio', 'cunnilingus', 'dildo', 'vibrator', 'buttplug', 'butt plug',
+        'nipple', 'tits', 'boobs', 'breasts', 'testicles', 'balls', 'scrotum', 'semen',
+        'sperm', 'erection', 'erect', 'horny', 'aroused', 'arousal', 'climax', 'orgy',
+        'gangbang', 'threesome', 'foursome', 'bukkake', 'hentai', 'bondage', 'bdsm',
+        'sadism', 'masochism', 'fetish', 'kink', 'kinky', 'slutty', 'whore', 'hooker',
+        'prostitute', 'escort', 'pimp', 'brothel', 'incest', 'rape', 'molest', 'pedophile',
+        'pedo', 'child porn', 'child pornography', 'jailbait', 'underage', 'minor',
+        'bestiality', 'zoophilia', 'necrophilia', 'necrophile', 'necro', 'scat', 'feces',
+        'poop', 'piss', 'urine', 'urinate', 'defecate', 'fart', 'queef', 'smegma',
+        'precum', 'pre-cum', 'pre cum', 'squirt', 'gush', 'creampie', 'cream pie',
+        'facial', 'money shot', 'cumshot', 'cum shot', 'swallow', 'deepthroat', 'deep throat',
+        'gag', 'choke', 'spank', 'whip', 'flog', 'paddle', 'cane', 'torture', 'humiliate',
+        'humiliation', 'degrade', 'degradation', 'slap', 'hit', 'beat', 'abuse', 'rape',
+        'force', 'forced', 'non-consensual', 'non consensual', 'nonconsensual', 'consent',
+        'age play', 'ageplay', 'daddy', 'mommy', 'baby', 'infant', 'child', 'teen', 'teenager',
+        'schoolgirl', 'schoolboy', 'teacher', 'student', 'principal', 'nurse', 'doctor',
+        'patient', 'therapist', 'therapy', 'massage', 'masseuse', 'masseur', 'happy ending',
+        'rub and tug', 'rub n tug', 'rub & tug', 'escort', 'call girl', 'callgirl', 'hooker',
+        'prostitute', 'whore', 'slut', 'tramp', 'hoe', 'ho', 'thot', 'skank', 'slag', 'trollop',
+        'hussy', 'jezebel', 'strumpet', 'wench', 'tart', 'floozy', 'harlot', 'courtesan',
+        'concubine', 'mistress', 'kept woman', 'sugar baby', 'sugar daddy', 'sugar momma',
+        'sugar mama', 'sugar mommy', 'sugar mummy', 'sugar', 'daddy', 'momma', 'mama',
+        'mommy', 'mummy', 'baby', 'babe', 'honey', 'sweetie', 'sweetheart', 'darling',
+        'dear', 'love', 'lover', 'boyfriend', 'girlfriend', 'partner', 'spouse', 'husband',
+        'wife', 'significant other', 'SO', 'friend with benefits', 'FWB', 'fuck buddy',
+        'booty call', 'one night stand', 'ONS', 'hookup', 'hook up', 'hook-up', 'casual',
+        'fling', 'affair', 'cheat', 'cheating', 'adultery', 'adulterer', 'adulteress',
+        'cuckold', 'cuck', 'bull', 'hotwife', 'hot wife', 'swinger', 'swing', 'swinging',
+        'open relationship', 'polyamory', 'polyamorous', 'poly', 'monogamy', 'monogamous',
+        'mono', 'commitment', 'committed', 'exclusive', 'exclusivity', 'faithful', 'loyalty',
+        'loyal', 'trust', 'trustworthy', 'honest', 'honesty', 'dishonest', 'dishonesty',
+        'lie', 'liar', 'lying', 'cheat', 'cheater', 'cheating'
+    ];
+    
+    const lowerText = text.toLowerCase();
+    
+    for (const word of inappropriateWords) {
+        if (lowerText.includes(word)) {
+            resultElement.innerHTML = '<p class="translation-error">I cannot translate inappropriate content. Please try a different phrase.</p>';
+            return;
+        }
+    }
+    
+    // Check if the text is in our common phrases dictionary
+    if (commonPhrases[lowerText]) {
+        displayTranslationResult(text, commonPhrases[lowerText], 'Dictionary', resultElement);
+        return;
+    }
+    
+    // Check for past or future tense indicators
+    const pastTenseIndicators = ['ate', 'did', 'went', 'was', 'were', 'had', 'made', 'said', 'took', 'came', 'saw', 'got'];
+    const futureTenseIndicators = ['will', 'going to', 'shall', 'about to'];
+    
+    const words = lowerText.split(/\s+/);
+    let containsPastTense = words.some(word => pastTenseIndicators.includes(word));
+    let containsFutureTense = words.some(word => futureTenseIndicators.some(indicator => lowerText.includes(indicator)));
+    
+    // If text contains past or future tense, use vocabulary mode
+    if (containsPastTense || containsFutureTense) {
+        const translation = getVocabularyTranslation(text);
+        displayTranslationResult(text, translation, 'Vocabulary', resultElement);
+        return;
+    }
+    
+    // Check if we should use AI or vocabulary mode
+    const translationMode = localStorage.getItem('translationMode') || 'vocabulary';
+    
+    if (translationMode === 'ai') {
+        // Try to get a vocabulary translation first
+        const vocabularyTranslation = getVocabularyTranslation(text);
+        
+        // If all words were found in vocabulary, use that instead of AI
+        if (!vocabularyTranslation.includes('[EX]')) {
+            displayTranslationResult(text, vocabularyTranslation, 'Vocabulary', resultElement);
+            return;
+        }
+        
+        // Otherwise, use AI translation
+        translateWithAI(text, resultElement);
+    } else {
+        // Use vocabulary translation
+        const translation = getVocabularyTranslation(text);
+        displayTranslationResult(text, translation, 'Vocabulary', resultElement);
+    }
+}
+
+// Function to display translation results
+function displayTranslationResult(originalText, translatedText, source, resultElement) {
+    // Clear previous results
+    resultElement.innerHTML = '';
+    
+    // Create result elements
+    const sentenceElement = document.createElement('p');
+    sentenceElement.className = 'translated-sentence';
+    
+    // Create English original
+    const originalElement = document.createElement('div');
+    originalElement.className = 'original-text';
+    originalElement.textContent = originalText.trim();
+    
+    // Create Italian translation
+    const italianElement = document.createElement('div');
+    italianElement.className = 'italian-text';
+    
+    // Replace [EX] markers with styled spans
+    let hasUnknownWords = false;
+    if (translatedText.includes('[EX]')) {
+        hasUnknownWords = true;
+        translatedText = translatedText.replace(/\[EX\](\w+)/g, '<span class="unknown-word">$1</span>');
+    }
+    
+    italianElement.innerHTML = translatedText;
+    
+    // Add the appropriate badge
+    const badge = document.createElement('span');
+    badge.className = source.toLowerCase() + '-badge';
+    badge.textContent = source;
+    
+    // Add tooltip based on source
+    if (source === 'Dictionary') {
+        badge.title = 'Translation from built-in dictionary of common phrases';
+    } else if (source === 'Vocabulary') {
+        badge.title = 'Translation using the vocabulary database';
+    } else if (source === 'AI') {
+        badge.title = 'Translation assisted by AI';
+    }
+    
+    italianElement.appendChild(badge);
+    
+    sentenceElement.appendChild(originalElement);
+    sentenceElement.appendChild(italianElement);
+    resultElement.appendChild(sentenceElement);
+    
+    // Add warning for unknown words if needed
+    if (hasUnknownWords && source === 'Vocabulary') {
+        const warningElement = document.createElement('div');
+        warningElement.className = 'translation-warning';
+        warningElement.innerHTML = 'Some words are not part of the provided Italian 1 Vocabulary. Please utilize AI Assist mode or try different words.';
+        resultElement.appendChild(warningElement);
+    }
+    
+    // Add warning for AI translations
+    if (source === 'AI') {
+        const aiWarningElement = document.createElement('div');
+        aiWarningElement.className = 'translation-warning ai-warning';
+        aiWarningElement.innerHTML = 'AI Assist mode is experimental and may include words not in the Italian 1 Vocabulary. Please verify translations.';
+        resultElement.appendChild(aiWarningElement);
+    }
+}
+
+// Function to initialize the translation tab
+function initTranslationTab() {
+    // Set default translation mode to Vocabulary
+    if (!localStorage.getItem('translationMode')) {
+        localStorage.setItem('translationMode', 'vocabulary');
+    }
+    
+    // Get the translation mode radio buttons
+    const vocabularyRadio = document.getElementById('vocabulary-mode');
+    const aiRadio = document.getElementById('ai-mode');
+    
+    // Set the correct radio button based on saved preference
+    const savedMode = localStorage.getItem('translationMode');
+    if (savedMode === 'ai') {
+        aiRadio.checked = true;
+    } else {
+        vocabularyRadio.checked = true;
+    }
+    
+    // Update the close button to show arrow based on position
+    updateTranslationTabCloseButton();
+}
+
+// Function to update the translation tab close button
+function updateTranslationTabCloseButton() {
+    const translationTab = document.querySelector('.translation-tab');
+    
+    // If translation tab doesn't exist or experimental translation is disabled, return
+    if (!translationTab || localStorage.getItem('experimentalTranslation') !== 'true') {
+        return;
+    }
+    
+    const closeButton = translationTab.querySelector('.close-button');
+    if (!closeButton) return;
+    
+    // Check if the tab is at the top or bottom of the screen
+    const tabRect = translationTab.getBoundingClientRect();
+    const isAtTop = tabRect.top < window.innerHeight / 2;
+    
+    // Update the button text
+    closeButton.innerHTML = isAtTop ? '▼' : '▲';
+    closeButton.title = isAtTop ? 'Move tab down' : 'Move tab up';
+}
+
+// Initialize translation tab when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Only initialize translation tab if experimental translation is enabled
+    const experimentalTranslation = localStorage.getItem('experimentalTranslation');
+    if (experimentalTranslation === 'true') {
+        initTranslationTab();
+    }
+    
+    // Add event listener for window resize to update the close button
+    window.addEventListener('resize', updateTranslationTabCloseButton);
+});

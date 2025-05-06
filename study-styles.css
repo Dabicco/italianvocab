@@ -1,0 +1,75 @@
+/* Study section styles */
+.study-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.situations-section {
+    background-color: var(--card-bg-color);
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 20px;
+}
+
+.situations-description {
+    margin-bottom: 20px;
+    line-height: 1.5;
+    color: var(--text-color);
+}
+
+.situation-display {
+    min-height: 150px;
+    margin: 20px 0;
+    padding: 15px;
+    border-radius: 8px;
+    background-color: var(--background-color);
+    border: 1px solid var(--border-color);
+}
+
+.situation-card {
+    background-color: rgba(82, 171, 152, 0.1);
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.situation-card h3 {
+    margin-top: 0;
+    color: var(--accent-color);
+    font-size: 1.2rem;
+}
+
+.situation-card p {
+    line-height: 1.5;
+    color: var(--text-color);
+}
+
+.randomize-button {
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 12px 20px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    display: block;
+    margin: 0 auto;
+    font-weight: bold;
+}
+
+.randomize-button:hover {
+    background-color: var(--button-hover);
+}
+
+.new-situation {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    0% { opacity: 0; transform: translateY(10px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
